@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Spectrum loader needle animations */
+@keyframes swing-left {
+  0% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(-90px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+@keyframes swing-right {
+  0% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(90px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    r: 4;
+  }
+  50% {
+    opacity: 0.5;
+    r: 6;
+  }
+}
+
+.needle-swing-left {
+  animation: swing-left 1.8s ease-in-out infinite;
+}
+
+.needle-swing-right {
+  animation: swing-right 1.8s ease-in-out infinite;
+}
+
+.needle-pulse {
+  animation: pulse-glow 1.8s ease-in-out infinite;
+}
