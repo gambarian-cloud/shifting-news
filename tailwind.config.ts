@@ -9,8 +9,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "monospace"],
+        sans: ["var(--font-inter)", "system-ui", "-apple-system", "sans-serif"],
       },
     },
   },

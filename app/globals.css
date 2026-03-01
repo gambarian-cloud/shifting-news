@@ -2,40 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-left: #dc2626;
+  --color-right: #2563eb;
+}
+
+body {
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  background: #f0f1f3;
+}
+
 /* Spectrum loader needle animations */
 @keyframes swing-left {
-  0% {
-    transform: translateX(0px);
-  }
-  50% {
-    transform: translateX(-90px);
-  }
-  100% {
-    transform: translateX(0px);
-  }
+  0% { transform: translateX(0px); }
+  50% { transform: translateX(-90px); }
+  100% { transform: translateX(0px); }
 }
 
 @keyframes swing-right {
-  0% {
-    transform: translateX(0px);
-  }
-  50% {
-    transform: translateX(90px);
-  }
-  100% {
-    transform: translateX(0px);
-  }
+  0% { transform: translateX(0px); }
+  50% { transform: translateX(90px); }
+  100% { transform: translateX(0px); }
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
-    opacity: 1;
-    r: 4;
-  }
-  50% {
-    opacity: 0.5;
-    r: 6;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .needle-swing-left {
