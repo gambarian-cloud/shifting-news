@@ -41,6 +41,22 @@ const RESPONSE_SCHEMA = {
   required: ["headline", "body", "safety_notes"],
 };
 
+// --- Daily request limiter (resets on cold start or midnight UTC) ---
+const DAILY_LIMIT = 500;
+let dailyCount = 0;
+let dailyResetDate = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+function checkDailyLimit(): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today !== dailyResetDate) {
+    dailyCount = 0;
+    dailyResetDate = today;
+  }
+  if (dailyCount >= DAILY_LIMIT) return false;
+  dailyCount++;
+  return true;
+}
+
 interface RewriteResult {
   headline: string;
   body: string;
@@ -63,6 +79,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { id, level } = body as { id: unknown; level: unknown };
+
+    if (!checkDailyLimit()) {
+      return NextResponse.json(
+        { error: "Дневной лимит запросов исчерпан. Попробуйте завтра." },
+        { status: 429 }
+      );
+    }
 
     if (
       typeof id !== "string" ||
