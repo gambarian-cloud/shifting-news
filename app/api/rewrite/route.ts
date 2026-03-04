@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { newsData } from "@/lib/news-data";
 
 const PROMPTS: Record<number, string> = {
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       config: {
         systemInstruction: systemPrompt,
         thinkingConfig: {
-          thinkingLevel: "minimal",
+          thinkingLevel: ThinkingLevel.MINIMAL,
         },
         responseMimeType: "application/json",
         responseJsonSchema: RESPONSE_SCHEMA,
