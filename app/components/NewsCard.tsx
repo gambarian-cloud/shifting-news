@@ -66,7 +66,7 @@ async function fetchRewrite(
 }
 
 /** Fire-and-forget background prefetch (no abort, silent fail) */
-function prefetch(id: string, level: number) {
+export function prefetch(id: string, level: number) {
   const key = `${id}_${level}`;
   if (sharedCache.has(key) || inflightPromises.has(key)) return;
   fetchRewrite(id, level).catch(() => {});
@@ -198,42 +198,46 @@ export default function NewsCard({ article, nextArticleId, isFirst }: NewsCardPr
         </>
       )}
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
         <button
           onClick={() => handleLevelClick(-1)}
           disabled={loading && activeLevel !== -1}
           aria-pressed={activeLevel === -1}
-          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 disabled:opacity-40 ${
+          className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 disabled:opacity-40 border-2 whitespace-nowrap ${
             activeLevel === -1
-              ? "bg-red-600 text-white shadow-sm"
-              : "text-gray-400 hover:text-red-600 hover:bg-red-50"
+              ? "bg-red-600 text-white border-red-600 shadow-md shadow-red-200"
+              : "text-red-600 border-red-200 hover:border-red-400 hover:bg-red-50 bg-white"
           }`}
         >
-          ← лево
+          <span>←</span>
+          <span className="sm:hidden">Лево</span>
+          <span className="hidden sm:inline">Левый фрейм</span>
         </button>
         <button
           onClick={() => handleLevelClick(0)}
           disabled={loading && activeLevel !== 0}
           aria-pressed={activeLevel === 0}
-          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 disabled:opacity-40 ${
+          className={`px-3 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 disabled:opacity-40 border-2 ${
             activeLevel === 0
-              ? "bg-gray-800 text-white shadow-sm"
-              : "text-gray-400 hover:text-gray-800 hover:bg-gray-100"
+              ? "bg-gray-800 text-white border-gray-800 shadow-md"
+              : "text-gray-500 border-gray-200 hover:border-gray-400 hover:bg-gray-50 bg-white"
           }`}
         >
-          нейтрал
+          Факт
         </button>
         <button
           onClick={() => handleLevelClick(1)}
           disabled={loading && activeLevel !== 1}
           aria-pressed={activeLevel === 1}
-          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 disabled:opacity-40 ${
+          className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 disabled:opacity-40 border-2 whitespace-nowrap ${
             activeLevel === 1
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+              ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200"
+              : "text-blue-600 border-blue-200 hover:border-blue-400 hover:bg-blue-50 bg-white"
           }`}
         >
-          право →
+          <span className="sm:hidden">Право</span>
+          <span className="hidden sm:inline">Правый фрейм</span>
+          <span>→</span>
         </button>
       </div>
     </article>

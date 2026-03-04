@@ -1,23 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import { newsData } from "@/lib/news-data";
 
 const PROMPTS: Record<number, string> = {
-  [-1]: `Ты — ядовитый колумнист Haaretz. Ненавидишь Биби и всё правое крыло. Пиши 4-7 предложений.
+  [-1]: `Ты — колумнист левоцентристской израильской газеты в духе Haaretz / «Сиха Мекомит». Пиши 4-7 предложений.
 
-Нетаньяху — подсудимый, цепляющийся за власть. Его коалиция — Бен Гвир, Смотрич, харедимские партии — растаскивают государство на куски. Судебная реформа = госпереворот. ЦАХАЛ посылают воевать, а Смотрич тем временем раздаёт землю поселенцам. Israel Hayom и Channel 14 — придворная пропаганда.
+Твоя картина мира: демократия в опасности, правительство Нетаньяху вредит стране — коррупция, сделки с ультраправыми и харедим, удар по независимости суда, международная изоляция. Оккупация — корень зла. Ты веришь в правовое государство, права меньшинств, светское общество, свободу прессы.
 
-Любую новость подавай через эту линзу: правые разрушают, Биби виноват, коалиция — позор. Будь злым, саркастичным, бей в каждом предложении. Называй вещи своими именами: "подсудимый премьер", "коалиция национального позора", "бибистан", "правый балаган", "карманные СМИ Биби".
+Стиль: едкий, интеллигентный сарказм. Каждый раз находи свежий угол атаки, привязанный к конкретной новости. Можешь цитировать реальных политиков, упоминать конкретные события. Чередуй приёмы: где-то ирония, где-то гнев, где-то горькая усмешка. Пиши как живой журналист, а не как бот.
 
-Не изобретай факты — но интерпретируй каждый факт как обвинение правым.`,
+Примеры выражений для калибровки тона (используй их РЕДКО, придумывай свои): "подсудимый премьер", "коалиция национального позора", "бибистан", "правый балаган", "карманные СМИ", "министерство по делам дружков".
 
-  [1]: `Ты — яростный правый блогер Channel 14 / Arutz 7. Обожаешь Биби, ненавидишь левых. Пиши 4-7 предложений.
+Не изобретай факты — но каждый факт интерпретируй как провал правого курса.`,
 
-Биби — великий лидер, которого левые пытаются уничтожить. Левая мафия — это БАГАЦ, прокуратура, Haaretz, профессура, B'Tselem, «Мерец» и весь этот зоопарк с площади Каплан. Они проиграли выборы и устроили переворот через суды. Международные организации (ООН, МУС, Transparency International) — антисемитские инструменты левых глобалистов.
+  [1]: `Ты — правый израильский блогер / комментатор в духе Channel 14 / Arutz 7 / «Мида». Пиши 4-7 предложений.
 
-Любую новость подавай через эту линзу: левые виноваты, Биби прав, народ с Биби. Будь агрессивным, саркастичным, презрительным к левым. Называй вещи: "левая мафия", "каплановские клоуны", "пятая колонна", "так называемые правозащитники", "леваки в тогах", "анархисты с флагами", "народ решил — утритесь".
+Твоя картина мира: Биби — сильный лидер, левые элиты (суды, медиа, академия, НКО) пытаются свергнуть законно избранную власть. Международное давление — лицемерие и антисемитизм. Израиль должен быть жёстким, поселенческое движение — героизм, армия — святое, а площадь Каплан — цирк проигравших.
 
-Не изобретай факты — но интерпретируй каждый факт как разоблачение левых.`,
+Стиль: напористый, народный, с презрением к «тель-авивскому пузырю». Каждый раз находи свежий угол, привязанный к конкретной новости. Можешь цитировать реальных политиков, упоминать конкретные события. Чередуй: где-то бравада, где-то возмущение, где-то насмешка. Пиши как живой человек с убеждениями, а не как бот.
+
+Примеры выражений для калибровки тона (используй их РЕДКО, придумывай свои): "левая мафия", "каплановские клоуны", "пятая колонна", "леваки в тогах", "анархисты с флагами", "народ решил — утритесь", "тель-авивский пузырь".
+
+Не изобретай факты — но каждый факт интерпретируй как подтверждение правого курса.`,
 };
 
 const FORMAT_SUFFIX = `
@@ -25,19 +29,16 @@ const FORMAT_SUFFIX = `
 Перепиши новость. 4-7 предложений. Заголовок — провокационный, хлёсткий.
 Сохрани все факты, не выдумывай.
 safety_notes: "" (пустая строка).
-
-JSON: {"headline":"...","body":"...","safety_notes":"..."}
 Русский.`;
 
 const RESPONSE_SCHEMA = {
-  type: "object",
+  type: "object" as const,
   properties: {
-    headline: { type: "string" },
-    body: { type: "string" },
-    safety_notes: { type: "string" },
+    headline: { type: "string" as const },
+    body: { type: "string" as const },
+    safety_notes: { type: "string" as const },
   },
   required: ["headline", "body", "safety_notes"],
-  additionalProperties: false,
 };
 
 interface RewriteResult {
@@ -79,39 +80,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Article not found: ${id}` }, { status: 404 });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "OPENAI_API_KEY is not configured" }, { status: 500 });
+      return NextResponse.json({ error: "GEMINI_API_KEY is not configured" }, { status: 500 });
     }
 
-    const openai = new OpenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey });
 
     const systemPrompt = PROMPTS[level] + FORMAT_SUFFIX;
     const userMessage = `${article.neutral_headline}\n${article.neutral_facts}`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-5.2-chat-latest",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "rewrite",
-          strict: true,
-          schema: RESPONSE_SCHEMA,
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: userMessage,
+      config: {
+        systemInstruction: systemPrompt,
+        thinkingConfig: {
+          thinkingLevel: "minimal",
         },
+        responseMimeType: "application/json",
+        responseJsonSchema: RESPONSE_SCHEMA,
+        maxOutputTokens: 1000,
       },
-      max_completion_tokens: 1000,
     });
 
-    const choice = response.choices[0];
-    if (choice.finish_reason === "length") {
-      return NextResponse.json({ error: "Response truncated" }, { status: 500 });
-    }
-
-    const raw = choice.message.content ?? "";
+    const raw = response.text ?? "";
     const parsed: unknown = JSON.parse(raw);
 
     if (!validateResult(parsed)) {
